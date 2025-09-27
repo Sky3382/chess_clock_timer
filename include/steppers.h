@@ -30,6 +30,11 @@ extern AccelStepper M1;
 extern AccelStepper H1;
 extern MultiStepper Clock1;
 
+extern AccelStepper S2;
+extern AccelStepper M2;
+extern AccelStepper H2;
+extern MultiStepper Clock2;
+
 // Targets arrays
 extern long clock1TargetPositions[3];
 

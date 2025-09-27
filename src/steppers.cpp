@@ -9,6 +9,11 @@ AccelStepper M1(AccelStepper::HALF4WIRE, in1PinM, in3PinM, in2PinM, in4PinM);
 AccelStepper H1(AccelStepper::HALF4WIRE, in1PinH, in3PinH, in2PinH, in4PinH);
 MultiStepper Clock1;
 
+AccelStepper S2(AccelStepper::HALF4WIRE, in1PinS, in3PinS, in2PinS, in4PinS);
+AccelStepper M2(AccelStepper::HALF4WIRE, in1PinM, in3PinM, in2PinM, in4PinM);
+AccelStepper H2(AccelStepper::HALF4WIRE, in1PinH, in3PinH, in2PinH, in4PinH);
+MultiStepper Clock2;
+
 long clock1TargetPositions[3] = {0, 0, 0};
 
 int homingSpeed = 1000;
