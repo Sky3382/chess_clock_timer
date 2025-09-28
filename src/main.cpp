@@ -40,7 +40,7 @@ void setup()
     //______move to right time______
     clock1TargetPositions[0] = StepsToMoveToRightHour(0, timeinfo.tm_hour, timeinfo.tm_min);
     clock1TargetPositions[1] = StepsToMoveToRightMinute(0, timeinfo.tm_min, timeinfo.tm_sec);
-    clock1TargetPositions[2] = 3000; // change later for the seconds
+    clock1TargetPositions[2] = StepsToMoveToRightSecond(SensorS1.readAngle(), timeinfo.tm_sec);
 
     MoveToRightTime1();
 
@@ -58,20 +58,19 @@ void loop()
 {
     loopTimestamp = millis();
 
-    if (mode == 0)
-    {
-        SetTimeSpeed(S1, M1, H1);
-        RunHandsTime(S1, M1, H1);
-    }
+    RunMode();
 
     if (loopTimestamp - lastUpdatedSteps > 60000)
     {
-        // S1.currentPosition() = S1.currentPosition() % 4096;
-        M1.setCurrentPosition(M1.currentPosition() % 4096);
-        H1.setCurrentPosition(H1.currentPosition() % 4096);
-        lastUpdatedSteps = millis();
-        // Serial.println(S1.currentPosition());
-        Serial.println(M1.currentPosition());
-        Serial.println(H1.currentPosition());
+        UpdateMotorsStepCount();
     }
+
+    static uint32_t lastTime = 0;
+
+
+
+    //  set initial position
+    //Serial.println(SensorS1.readAngle());
+
+
 }

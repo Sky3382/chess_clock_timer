@@ -15,7 +15,8 @@ extern int mode;
 
 // Hour-hand timing control
 extern unsigned long previousHMillis;
-extern bool hActive;
-extern const unsigned long intervalHActive;
+extern bool h1Active;
+extern bool h2Active;
+extern const unsigned long intervalHActive; // 50 seconds in ms
 
 #endif

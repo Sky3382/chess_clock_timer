@@ -12,5 +12,6 @@ int mode = 0;
 
 // Hour-hand timing control
 unsigned long previousHMillis = 0;
-bool hActive = false;
-const unsigned long intervalHActive = 50000; // 50 seconds in ms
+bool h1Active = false;
+bool h2Active = false;
+const unsigned long intervalHActive = 50000; // 50 seconds

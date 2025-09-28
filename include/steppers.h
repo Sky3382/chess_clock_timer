@@ -3,6 +3,7 @@
 
 #include <AccelStepper.h>
 #include <MultiStepper.h>
+#include <AS5600.h>
 
 // Pin definitions
 #define in1PinS1 13
@@ -38,9 +39,24 @@
 // Sensor pins
 #define SensorM1 35
 #define SensorH1 34
+extern AS5600 SensorS1;
 
 #define SensorM2 35
 #define SensorH2 34
+extern AS5600 SensorS2;
+
+// Configuration variables
+extern int homingSpeed;
+extern int modeChangeSpeed;
+extern int modeChangeAcceleration;
+
+// Variables
+extern int HSpeedTime;   // Hour hand speed in time mode (degrees per minute)
+extern int MSpeedTime;   // Minute hand speed in time mode (degrees per minute)
+extern int SSpeedTime; // Second hand speed in time mode (degrees per minute)
+
+
+
 
 // Externs for steppers and controller
 extern AccelStepper S1;
@@ -57,11 +73,6 @@ extern MultiStepper Clock2;
 extern long clock1TargetPositions[3];
 extern long clock2TargetPositions[3];
 
-// Configuration variables
-extern int homingSpeed;
-extern int modeChangeSpeed;
-extern int modeChangeAcceleration;
-
 // Timing globals
 extern unsigned long lastHourHandMovement;
 extern unsigned long lastUpdatedSteps;
@@ -77,10 +88,13 @@ void Homing1();
 void Homing2();
 int StepsToMoveToRightHour(int currentPosition, int hour, int min);
 int StepsToMoveToRightMinute(int currentPosition, int min, int sec);
+int StepsToMoveToRightSecond(int currentPosition, int sec);
 void MoveToRightTime1();
 void MoveToRightTime2();
 void SetTimeSpeed(AccelStepper &S, AccelStepper &M, AccelStepper &H);
 void SetModeChangeSpeed(AccelStepper &S, AccelStepper &M, AccelStepper &H);
-void RunHandsTime(AccelStepper &S, AccelStepper &M, AccelStepper &H);
+void RunHandsTime1();
+void RunHandsTime2();
+void UpdateMotorsStepCount();
 
 #endif // STEPPERS_H
