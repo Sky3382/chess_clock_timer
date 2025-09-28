@@ -3,6 +3,15 @@
 #include "globals.h"
 #include <Arduino.h>
 
+// Configuration Variables
+int homingSpeed = 1000;
+int modeChangeSpeed = 1000;
+int modeChangeAcceleration = 300;
+
+int HSpeedTime = -(1024 / 3);  // Hour hand speed in time mode (degrees per minute)   (-341.33)
+int MSpeedTime = -(256 / 45);  // Minute hand speed in time mode (degrees per minute)    (-5.69)
+int SSpeedTime = -(128 / 135); // Second hand speed in time mode (degrees per minute)    (-0.95)
+
 // Instantiate steppers (HALF4WIRE)
 AccelStepper S1(AccelStepper::HALF4WIRE, in1PinS1, in3PinS1, in2PinS1, in4PinS1);
 AccelStepper M1(AccelStepper::HALF4WIRE, in1PinM1, in3PinM1, in2PinM1, in4PinM1);
@@ -15,10 +24,7 @@ AccelStepper H2(AccelStepper::HALF4WIRE, in1PinH2, in3PinH2, in2PinH2, in4PinH2)
 MultiStepper Clock2;
 
 long clock1TargetPositions[3] = {0, 0, 0};
-
-int homingSpeed = 1000;
-int modeChangeSpeed = 1000;
-int modeChangeAcceleration = 300;
+long clock2TargetPositions[3] = {0, 0, 0};
 
 void InitSteppers1()
 {
@@ -112,8 +118,6 @@ void Homing1()
     M1.setCurrentPosition(0);
     H1.setCurrentPosition(0);
 }
-
-
 
 void Homing2()
 {
@@ -245,15 +249,15 @@ void MoveToRightTime2()
 void SetTimeSpeed(AccelStepper &S, AccelStepper &M, AccelStepper &H)
 {
     S.setMaxSpeed(800.0);
-    S.setSpeed(-(341 + (2 / 3)));
+    S.setSpeed(SSpeedTime);
     S.enableOutputs();
 
     M.setMaxSpeed(10.0);
-    M.setSpeed(-5.69);
+    M.setSpeed(MSpeedTime);
     M.enableOutputs();
 
     H.setMaxSpeed(800.0);
-    H.setSpeed(-0.95);
+    H.setSpeed(HSpeedTime);
     H.enableOutputs();
 }
 
