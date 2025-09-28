@@ -7,8 +7,8 @@ void RunMode()
 {
     if (mode == 0)
     {
-        SetTimeSpeed();
-        RunHandsTime();
+        SetTimeSpeed(S1, M1, H1);
+        RunHandsTime(S1, M1, H1);
 
         // periodic housekeeping: normalize positions every minute
         static unsigned long lastUpdatedSteps_local = 0;

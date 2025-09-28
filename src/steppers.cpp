@@ -4,14 +4,14 @@
 #include <Arduino.h>
 
 // Instantiate steppers (HALF4WIRE)
-AccelStepper S1(AccelStepper::HALF4WIRE, in1PinS, in3PinS, in2PinS, in4PinS);
-AccelStepper M1(AccelStepper::HALF4WIRE, in1PinM, in3PinM, in2PinM, in4PinM);
-AccelStepper H1(AccelStepper::HALF4WIRE, in1PinH, in3PinH, in2PinH, in4PinH);
+AccelStepper S1(AccelStepper::HALF4WIRE, in1PinS1, in3PinS1, in2PinS1, in4PinS1);
+AccelStepper M1(AccelStepper::HALF4WIRE, in1PinM1, in3PinM1, in2PinM1, in4PinM1);
+AccelStepper H1(AccelStepper::HALF4WIRE, in1PinH1, in3PinH1, in2PinH1, in4PinH1);
 MultiStepper Clock1;
 
-AccelStepper S2(AccelStepper::HALF4WIRE, in1PinS, in3PinS, in2PinS, in4PinS);
-AccelStepper M2(AccelStepper::HALF4WIRE, in1PinM, in3PinM, in2PinM, in4PinM);
-AccelStepper H2(AccelStepper::HALF4WIRE, in1PinH, in3PinH, in2PinH, in4PinH);
+AccelStepper S2(AccelStepper::HALF4WIRE, in1PinS2, in3PinS2, in2PinS2, in4PinS2);
+AccelStepper M2(AccelStepper::HALF4WIRE, in1PinM2, in3PinM2, in2PinM2, in4PinM2);
+AccelStepper H2(AccelStepper::HALF4WIRE, in1PinH2, in3PinH2, in2PinH2, in4PinH2);
 MultiStepper Clock2;
 
 long clock1TargetPositions[3] = {0, 0, 0};
@@ -20,23 +20,38 @@ int homingSpeed = 1000;
 int modeChangeSpeed = 1000;
 int modeChangeAcceleration = 300;
 
-void InitSteppers()
+void InitSteppers1()
 {
     // add to multistepper in same order as target array
     Clock1.addStepper(H1);
     Clock1.addStepper(M1);
     Clock1.addStepper(S1);
-
-    pinMode(SensorM, INPUT);
-    pinMode(SensorH, INPUT);
-
-    SetModeChangeSpeed();
 }
 
-void Homing()
+void InitSteppers2()
 {
-    bool sensorMState = false;
-    bool sensorHState = false;
+    // add to multistepper in same order as target array
+    Clock2.addStepper(H2);
+    Clock2.addStepper(M2);
+    Clock2.addStepper(S2);
+}
+
+void InitSensors1()
+{
+    pinMode(SensorM1, INPUT);
+    pinMode(SensorH1, INPUT);
+}
+
+void InitSensors2()
+{
+    pinMode(SensorM2, INPUT);
+    pinMode(SensorH2, INPUT);
+}
+
+void Homing1()
+{
+    bool SensorM1State = false;
+    bool SensorH1State = false;
 
     // Ensure motors are moving slowly for accurate stopping
     M1.setMaxSpeed(1000.0); // reduce speed for homing
@@ -45,13 +60,13 @@ void Homing()
     M1.setSpeed(-homingSpeed); // negative or positive depends on wiring
     H1.setSpeed(-homingSpeed);
 
-    bool preRunM = digitalRead(SensorM);
-    bool preRunH = digitalRead(SensorH);
+    bool preRunM = digitalRead(SensorM1);
+    bool preRunH = digitalRead(SensorH1);
 
     unsigned long startTime = millis(); // record the start time
 
     // Run until both sensors are triggered
-    while (!sensorMState || !sensorHState)
+    while (!SensorM1State || !SensorH1State)
     {
         if (preRunM)
         {
@@ -61,10 +76,10 @@ void Homing()
                 preRunM = false;
             }
         }
-        else if (!sensorMState)
+        else if (!SensorM1State)
         {
-            sensorMState = digitalRead(SensorM);
-            if (!sensorMState)
+            SensorM1State = digitalRead(SensorM1);
+            if (!SensorM1State)
                 M1.runSpeed();
             else
                 M1.disableOutputs(); // stop holding power
@@ -78,10 +93,10 @@ void Homing()
                 preRunH = false;
             }
         }
-        else if (!sensorHState)
+        else if (!SensorH1State)
         {
-            sensorHState = digitalRead(SensorH);
-            if (!sensorHState)
+            SensorH1State = digitalRead(SensorH1);
+            if (!SensorH1State)
                 H1.runSpeed();
             else
                 H1.disableOutputs(); // stop holding power
@@ -98,7 +113,74 @@ void Homing()
     H1.setCurrentPosition(0);
 }
 
-int StepsToMoveToRightHour(int hour, int min)
+
+
+void Homing2()
+{
+    bool SensorM2State = false;
+    bool SensorH2State = false;
+
+    // Ensure motors are moving slowly for accurate stopping
+    M2.setMaxSpeed(1000.0); // reduce speed for homing
+    H2.setMaxSpeed(1000.0);
+
+    M2.setSpeed(-homingSpeed); // negative or positive depends on wiring
+    H2.setSpeed(-homingSpeed);
+
+    bool preRunM = digitalRead(SensorM2);
+    bool preRunH = digitalRead(SensorH2);
+
+    unsigned long startTime = millis(); // record the start time
+
+    // Run until both sensors are triggered
+    while (!SensorM2State || !SensorH2State)
+    {
+        if (preRunM)
+        {
+            M2.runSpeed();
+            if (millis() - startTime > 5000)
+            {
+                preRunM = false;
+            }
+        }
+        else if (!SensorM2State)
+        {
+            SensorM2State = digitalRead(SensorM2);
+            if (!SensorM2State)
+                M2.runSpeed();
+            else
+                M2.disableOutputs(); // stop holding power
+        }
+
+        if (preRunH)
+        {
+            H2.runSpeed();
+            if (millis() - startTime > 5000)
+            {
+                preRunH = false;
+            }
+        }
+        else if (!SensorH2State)
+        {
+            SensorH2State = digitalRead(SensorH2);
+            if (!SensorH2State)
+                H2.runSpeed();
+            else
+                H2.disableOutputs(); // stop holding power
+        }
+
+        // Avoid blocking too long without yielding
+        delay(1);
+    }
+
+    // Stop both motors completely
+    M2.setSpeed(0);
+    H2.setSpeed(0);
+    M2.setCurrentPosition(0);
+    H2.setCurrentPosition(0);
+}
+
+int StepsToMoveToRightHour(int currentPosition, int hour, int min)
 {
     int stepsToTake;
     hour = hour % 12;
@@ -115,7 +197,7 @@ int StepsToMoveToRightHour(int hour, int min)
     return stepsToTake;
 }
 
-int StepsToMoveToRightMinute(int min, int sec)
+int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
 {
     int stepsToTake;
     sec = sec + 10;
@@ -136,9 +218,9 @@ int StepsToMoveToRightMinute(int min, int sec)
     return stepsToTake;
 }
 
-void MoveToRightTime()
+void MoveToRightTime1()
 {
-    SetModeChangeSpeed();
+    SetModeChangeSpeed(S1, M1, H1);
 
     Clock1.moveTo(clock1TargetPositions);
     while (H1.distanceToGo() != 0 || M1.distanceToGo() != 0 || S1.distanceToGo() != 0)
@@ -148,39 +230,51 @@ void MoveToRightTime()
     lastHourHandMovement = millis();
 }
 
-void SetTimeSpeed()
+void MoveToRightTime2()
 {
-    S1.setMaxSpeed(800.0);
-    S1.setSpeed(-(341 + (2 / 3)));
-    S1.enableOutputs();
+    SetModeChangeSpeed(S2, M2, H2);
 
-    M1.setMaxSpeed(10.0);
-    M1.setSpeed(-5.69);
-    M1.enableOutputs();
-
-    H1.setMaxSpeed(800.0);
-    H1.setSpeed(-0.95);
-    H1.enableOutputs();
+    Clock2.moveTo(clock2TargetPositions);
+    while (H2.distanceToGo() != 0 || M2.distanceToGo() != 0 || S2.distanceToGo() != 0)
+    {
+        Clock2.run();
+    }
+    lastHourHandMovement = millis();
 }
 
-void SetModeChangeSpeed()
+void SetTimeSpeed(AccelStepper &S, AccelStepper &M, AccelStepper &H)
 {
-    H1.setMaxSpeed(modeChangeSpeed);
-    M1.setMaxSpeed(modeChangeSpeed);
-    S1.setMaxSpeed(modeChangeSpeed);
+    S.setMaxSpeed(800.0);
+    S.setSpeed(-(341 + (2 / 3)));
+    S.enableOutputs();
 
-    H1.setAcceleration(modeChangeAcceleration);
-    M1.setAcceleration(modeChangeAcceleration);
-    S1.setAcceleration(modeChangeAcceleration);
+    M.setMaxSpeed(10.0);
+    M.setSpeed(-5.69);
+    M.enableOutputs();
+
+    H.setMaxSpeed(800.0);
+    H.setSpeed(-0.95);
+    H.enableOutputs();
 }
 
-void RunHandsTime()
+void SetModeChangeSpeed(AccelStepper &S, AccelStepper &M, AccelStepper &H)
+{
+    H.setMaxSpeed(modeChangeSpeed);
+    M.setMaxSpeed(modeChangeSpeed);
+    S.setMaxSpeed(modeChangeSpeed);
+
+    H.setAcceleration(modeChangeAcceleration);
+    M.setAcceleration(modeChangeAcceleration);
+    S.setAcceleration(modeChangeAcceleration);
+}
+
+void RunHandsTime(AccelStepper &S, AccelStepper &M, AccelStepper &H)
 {
     unsigned long currentMillis = millis();
 
     // Always run S1 and M1
-    S1.runSpeed();
-    M1.runSpeed();
+    S.runSpeed();
+    M.runSpeed();
 
     // Check if we should toggle H1
     if (!hActive && currentMillis - previousHMillis >= intervalHActive)
@@ -192,7 +286,7 @@ void RunHandsTime()
 
     if (hActive)
     {
-        H1.runSpeed(); // Run H1 while active
+        H.runSpeed(); // Run H1 while active
 
         // Deactivate H1 after intervalHActive milliseconds
         if (currentMillis - previousHMillis >= intervalHActive)

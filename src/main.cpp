@@ -20,17 +20,15 @@ void setup()
     InitTime();
 
     //______Initialize multimotors______
-    SetModeChangeSpeed();
-    Clock1.addStepper(H1);
-    Clock1.addStepper(M1);
-    Clock1.addStepper(S1);
-
-    //______Initialize Sensors______
-    pinMode(SensorM, INPUT);
-    pinMode(SensorH, INPUT);
+    SetModeChangeSpeed(S1, M1, H1);
+    InitSteppers1();
+    InitSensors1();
+    // InitSteppers2();
+    // InitSensors2();
 
     //______Motors to zero______
-    Homing();
+    Homing1();
+    // Homing2();
 
     //______Get Time______
     GetLocalTimeSafe(timeinfo);
@@ -40,11 +38,11 @@ void setup()
     Serial.printf("Time: %02d:%02d:%02d\n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
 
     //______move to right time______
-    clock1TargetPositions[0] = StepsToMoveToRightHour(timeinfo.tm_hour, timeinfo.tm_min);
-    clock1TargetPositions[1] = StepsToMoveToRightMinute(timeinfo.tm_min, timeinfo.tm_sec);
+    clock1TargetPositions[0] = StepsToMoveToRightHour(0, timeinfo.tm_hour, timeinfo.tm_min);
+    clock1TargetPositions[1] = StepsToMoveToRightMinute(0, timeinfo.tm_min, timeinfo.tm_sec);
     clock1TargetPositions[2] = 3000; // change later for the seconds
 
-    MoveToRightTime();
+    MoveToRightTime1();
 
     while (millis() - lastUpdatedTimeData < 10000)
     {
@@ -62,8 +60,8 @@ void loop()
 
     if (mode == 0)
     {
-        SetTimeSpeed();
-        RunHandsTime();
+        SetTimeSpeed(S1, M1, H1);
+        RunHandsTime(S1, M1, H1);
     }
 
     if (loopTimestamp - lastUpdatedSteps > 60000)
