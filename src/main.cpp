@@ -6,6 +6,7 @@
 #include "modes.h"
 #include "time_utils.h"
 #include "wifi_setup.h"
+#include "input.h"
 
 void setup()
 {
@@ -25,6 +26,8 @@ void setup()
     InitSensors1();
     // InitSteppers2();
     // InitSensors2();
+    InitEncoder();
+    InitButtons();
 
     //______Motors to zero______
     Homing1();
@@ -65,12 +68,40 @@ void loop()
         UpdateMotorsStepCount();
     }
 
+    switch (steppersMovingMethod)
+    {
+    case 0:
+        if (clock1active)
+            RunHandsTime1();
+
+        if (clock2active)
+            RunHandsTime2();
+
+        break;
+    case 1:
+        if (clock1active)
+            Clock1.run();
+        if (clock2active)
+            Clock2.run();
+
+    case 2:
+        if (clock1active)
+        {
+            S1.runSpeed();
+            M1.runSpeed();
+            H1.runSpeed();
+        }
+        if (clock2active)
+        {
+            S2.runSpeed();
+            M2.runSpeed();
+            H2.runSpeed();
+        }
+        break;
+    }
+
     static uint32_t lastTime = 0;
 
-
-
     //  set initial position
-    //Serial.println(SensorS1.readAngle());
-
-
+    // Serial.println(SensorS1.readAngle());
 }

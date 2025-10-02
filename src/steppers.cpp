@@ -221,8 +221,8 @@ void Homing2()
 int StepsToMoveToRightHour(int currentPosition, int hour, int min)
 {
     const int stepsPerTurn = 20480;
-    const double stepsPerHour = (double)stepsPerTurn / 12.0;   // 1706.666...
-    const double stepsPerMinute = stepsPerHour / 60.0;         // ~28.444...
+    const double stepsPerHour = (double)stepsPerTurn / 12.0; // 1706.666...
+    const double stepsPerMinute = stepsPerHour / 60.0;       // ~28.444...
 
     // Normaliser l'heure (si > 12)
     hour %= 12;
@@ -232,29 +232,33 @@ int StepsToMoveToRightHour(int currentPosition, int hour, int min)
 
     // Calculer le delta (positif = antihoraire, négatif = horaire)
     int delta = (currentPosition - targetPosition) % stepsPerTurn;
-    if (delta < 0) delta += stepsPerTurn;
+    if (delta < 0)
+        delta += stepsPerTurn;
 
     // Choisir le chemin le plus court
-    if (delta > stepsPerTurn / 2) {
+    if (delta > stepsPerTurn / 2)
+    {
         delta -= stepsPerTurn;
     }
 
-    return delta-currentPosition;  // positif = CCW, négatif = CW
+    return delta - currentPosition; // positif = CCW, négatif = CW
 }
 
 int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
 {
     const int stepsPerTurn = 20480;
-    const double stepsPerMinute = (double)stepsPerTurn / 60.0;  // 341.333...
-    const double stepsPerSecond = stepsPerMinute / 60.0;        // ~5.6889
+    const double stepsPerMinute = (double)stepsPerTurn / 60.0; // 341.333...
+    const double stepsPerSecond = stepsPerMinute / 60.0;       // ~5.6889
 
     // Normalize input
     sec += 10;
-    if (sec >= 60) {
+    if (sec >= 60)
+    {
         sec -= 60;
         min++;
     }
-    if (min >= 60) {
+    if (min >= 60)
+    {
         min -= 60;
     }
 
@@ -263,54 +267,59 @@ int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
 
     // Compute delta (positive = CCW, negative = CW)
     int delta = (currentPosition - targetPosition) % stepsPerTurn;
-    if (delta < 0) delta += stepsPerTurn;
+    if (delta < 0)
+        delta += stepsPerTurn;
 
     // Choose the shortest path
-    if (delta > stepsPerTurn / 2) {
+    if (delta > stepsPerTurn / 2)
+    {
         delta -= stepsPerTurn; // flips direction
     }
 
-    return delta-currentPosition;  // positive = CCW, negative = CW
+    return delta - currentPosition; // positive = CCW, negative = CW
 }
 
-
 int StepsToMoveToRightSecond(int currentSensorPosition, int sec)
+
+// Return THE ABSOLUTE POSITION AND NOT THE DELTA
 {
     const int stepsPerTurn = 20480;
-    const double stepsPerSecond = (double)stepsPerTurn / 60.0;   // 341.333...
-    
+    const double stepsPerSecond = (double)stepsPerTurn / 60.0; // 341.333...
+
     // Convertir la position capteur (0–4096) en pas (0–20480)
     // Négatif car orientation inversée
     int currentPosition = (currentSensorPosition * (-(stepsPerTurn) / 4096.0));
 
-    Serial.println(currentPosition);
+    // Serial.println(currentPosition);  Thanks a lot for helping me debug
 
     // Décalage de +10 secondes
     sec += 10;
-    if (sec >= 60) {
+    if (sec >= 60)
+    {
         sec -= 60;
     }
 
     // Position cible
     int targetPosition = (int)-(stepsPerSecond * sec) % stepsPerTurn;
 
-    Serial.println(targetPosition);
+    // Serial.println(targetPosition); You too
 
-    // Calcul du delta (positif = CCW, négatif = CW)
-    // Compute delta (positive = CCW, negative = CW)
+    // Calcul du delta
     int delta = (targetPosition - currentPosition);
 
     // Choose the shortest path
-    if (delta < -stepsPerTurn / 2) {
+    if (delta < -stepsPerTurn / 2)
+    {
         delta += stepsPerTurn; // flips direction
-    } else if (delta > stepsPerTurn / 2) {
+    }
+    else if (delta > stepsPerTurn / 2)
+    {
         delta -= stepsPerTurn; // flips direction
     }
 
-    Serial.println(delta);
+    // Serial.println(delta); And you too
 
-    return delta-currentPosition;  // positif = CCW, négatif = CW
-
+    return delta - currentPosition; // positif = CCW, négatif = CW
 }
 
 void MoveToRightTime1()
