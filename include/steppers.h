@@ -6,43 +6,43 @@
 #include <AS5600.h>
 
 // Pin definitions
-#define in1PinS1 13
-#define in2PinS1 12
-#define in3PinS1 14
-#define in4PinS1 27
+#define in1PinS1 15
+#define in2PinS1 16
+#define in3PinS1 17
+#define in4PinS1 18
 
-#define in1PinM1 26
-#define in2PinM1 25
-#define in3PinM1 33
-#define in4PinM1 32
+#define in1PinM1 21
+#define in2PinM1 47
+#define in3PinM1 48
+#define in4PinM1 45
 
-#define in1PinH1 16
-#define in2PinH1 17
-#define in3PinH1 18
-#define in4PinH1 19
+#define in1PinH1 35
+#define in2PinH1 36
+#define in3PinH1 37
+#define in4PinH1 38
 
-#define in1PinS2 13
-#define in2PinS2 12
-#define in3PinS2 14
-#define in4PinS2 27
+#define in1PinS2 15
+#define in2PinS2 16
+#define in3PinS2 17
+#define in4PinS2 18
 
-#define in1PinM2 26
-#define in2PinM2 25
-#define in3PinM2 33
-#define in4PinM2 32
+#define in1PinM2 21
+#define in2PinM2 47
+#define in3PinM2 48
+#define in4PinM2 45
 
-#define in1PinH2 16
-#define in2PinH2 17
-#define in3PinH2 18
-#define in4PinH2 19
+#define in1PinH2 35
+#define in2PinH2 36
+#define in3PinH2 37
+#define in4PinH2 38
 
 // Sensor pins
-#define SensorM1 35
-#define SensorH1 34
+#define SensorM1 13
+#define SensorH1 14
 extern AS5600 SensorS1;
 
-#define SensorM2 35
-#define SensorH2 34
+#define SensorM2 20
+#define SensorH2 21
 extern AS5600 SensorS2;
 
 // Configuration variables

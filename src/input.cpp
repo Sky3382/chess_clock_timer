@@ -11,6 +11,8 @@ Bounce button_state;
 Bounce button_mode;
 Bounce button_enter;
 
+long last_encoder_position = 0;  // track previous position
+
 void InitEncoder()
 {
     // Initialize encoder
@@ -74,4 +76,16 @@ void HandleInputs()
         Serial.println("Encoder button pressed");
         // Handle encoder button press
     }
+
+    long position;
+    if (encoder.getCount()%2 == 0) { // only read every second step to avoid noise
+        position = -encoder.getCount()/2; // Get current position
+        if (position != last_encoder_position) {
+            Serial.print("Encoder position: ");
+            Serial.println(position);
+            last_encoder_position = position;
+        }
+    }
+
+    
 }

@@ -11,6 +11,7 @@
 void setup()
 {
     Serial.begin(115200);
+    Serial.println("Starting up...");
 
     //______Initialize wifi and time______
 
@@ -50,6 +51,8 @@ void loop()
 {
     loopTimestamp = millis();
 
+    HandleInputs(); // Check and handle button presses
+
     switch (state)
     {
     case 0:           // is state is default / display time
@@ -87,11 +90,10 @@ void loop()
         break;
     }
 
-    RunMode1();
 
     switch (steppersMovingMethod)
     {
-    case 0:
+    case 0: //Time mode
         if (clock1active)
             RunHandsTime1();
 
@@ -99,13 +101,13 @@ void loop()
             RunHandsTime2();
 
         break;
-    case 1:
+    case 1: //Multi stepper
         if (clock1active)
             Clock1.run();
         if (clock2active)
             Clock2.run();
 
-    case 2:
+    case 2: //Individual run speed
         if (clock1active)
         {
             S1.runSpeed();

@@ -6,8 +6,8 @@
 #include <Bounce2.h>
 
 // Rotary Encoder Pins
-#define ENCODER1_PIN_A 2
-#define ENCODER1_PIN_B 3
+#define ENCODER1_PIN_A 39  
+#define ENCODER1_PIN_B 40
 
 #define BUTTON_ENCODER_PIN 4
 #define BUTTON_STATE_PIN 5
@@ -27,5 +27,6 @@ extern Bounce button_enter;
 
 extern void InitEncoder();
 extern void InitButtons();
+extern void HandleInputs();
 
 #endif

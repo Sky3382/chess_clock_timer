@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Wire.h>
 #include "steppers.h"
 #include "time_utils.h"
 #include "globals.h"
@@ -51,7 +52,7 @@ void InitSensors1()
     pinMode(SensorM1, INPUT);
     pinMode(SensorH1, INPUT);
 
-    Wire.begin();
+    Wire.begin(); // SDA, SCL
 
     if (SensorS1.begin())
     {
