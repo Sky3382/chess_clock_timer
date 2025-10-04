@@ -10,7 +10,7 @@
 #define ENCODER1_PIN_B 40
 
 #define BUTTON_ENCODER_PIN 4
-#define BUTTON_STATE_PIN 5
+#define BUTTON_BACK_PIN 5
 #define BUTTON_MODE_PIN 6
 #define BUTTON_ENTER_PIN 7
 
@@ -21,7 +21,7 @@ extern ESP32Encoder encoder;
 
 // Button Instances
 extern Bounce button_encoder;
-extern Bounce button_state;
+extern Bounce button_back;
 extern Bounce button_mode;
 extern Bounce button_enter;
 

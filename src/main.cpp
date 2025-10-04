@@ -59,7 +59,7 @@ void loop()
         switch (mode) // execute mode functions
         {
         case 0: // Time mode
-            if (lastMode != mode)
+            if (lastState != state && state == 0)
             {
                 GetAndMoveToTime(true, false);
             }
@@ -84,6 +84,10 @@ void loop()
         }
 
     case 1: // mode change
+        steppersMovingMethod = 1; // multi stepper
+        clock1TargetPositions[0] = 0;
+        clock1TargetPositions[1] = 0;
+        clock1TargetPositions[2] = (20480/12)*mode; // set H to position based on mode
         break;
 
     case 2: // settings
@@ -95,9 +99,11 @@ void loop()
     {
     case 0: //Time mode
         if (clock1active)
+            SetTimeSpeed(S1, M1, H1);
             RunHandsTime1();
 
         if (clock2active)
+            SetTimeSpeed(S2, M2, H2);
             RunHandsTime2();
 
         break;
@@ -123,13 +129,17 @@ void loop()
         break;
     }
 
+    
+
+    // Update step count every minute
+
     if (loopTimestamp - lastUpdatedSteps > 60000)
     {
         UpdateMotorsStepCount();
     }
 
-    static uint32_t lastTime = 0;
 
-    //  set initial position
-    // Serial.println(SensorS1.readAngle());
+    // Save last mode and state
+    lastMode = mode;
+    lastState = state;
 }

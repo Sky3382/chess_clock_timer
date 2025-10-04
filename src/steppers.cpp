@@ -229,7 +229,7 @@ int StepsToMoveToRightHour(int currentPosition, int hour, int min)
     hour %= 12;
 
     // Calculer la position cible en pas
-    int targetPosition = (int)(stepsPerHour * hour + stepsPerMinute * min) % stepsPerTurn;
+    int targetPosition = (int)-(stepsPerHour * hour + stepsPerMinute * min) % stepsPerTurn;
 
     // Calculer le delta (positif = antihoraire, négatif = horaire)
     int delta = (currentPosition - targetPosition) % stepsPerTurn;
@@ -242,7 +242,7 @@ int StepsToMoveToRightHour(int currentPosition, int hour, int min)
         delta -= stepsPerTurn;
     }
 
-    return delta - currentPosition; // positif = CCW, négatif = CW
+    return targetPosition; // positif = CCW, négatif = CW
 }
 
 int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
@@ -264,7 +264,7 @@ int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
     }
 
     // Compute target step
-    int targetPosition = (int)(stepsPerMinute * min + stepsPerSecond * sec) % stepsPerTurn;
+    int targetPosition = (int)-(stepsPerMinute * min + stepsPerSecond * sec) % stepsPerTurn;
 
     // Compute delta (positive = CCW, negative = CW)
     int delta = (currentPosition - targetPosition) % stepsPerTurn;
@@ -277,7 +277,7 @@ int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
         delta -= stepsPerTurn; // flips direction
     }
 
-    return delta - currentPosition; // positive = CCW, negative = CW
+    return targetPosition; // positive = CCW, negative = CW
 }
 
 int StepsToMoveToRightSecond(int currentSensorPosition, int sec)
@@ -320,7 +320,7 @@ int StepsToMoveToRightSecond(int currentSensorPosition, int sec)
 
     // Serial.println(delta); And you too
 
-    return delta - currentPosition; // positif = CCW, négatif = CW
+    return targetPosition; // positif = CCW, négatif = CW
 }
 
 void MoveToRightTime1()
