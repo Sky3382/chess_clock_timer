@@ -11,7 +11,13 @@ extern unsigned long lastUpdatedSteps;
 extern unsigned long lastUpdatedHour;
 
 // Modes
-extern int mode;
+extern int mode; // (O is time, 1 is time to, 2 is pomodoro timer)
+extern int lastMode;
+extern int state;                //(0 is normal, 1 for mode change, 2 is settings and 3 is calibration)
+extern int steppersMovingMethod; // 0 is time mode, 1 is multi stepper (target position), 2 is individual run speed
+
+extern bool clock1active;
+extern bool clock2active;
 
 // Hour-hand timing control
 extern unsigned long previousHMillis;
