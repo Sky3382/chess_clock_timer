@@ -96,5 +96,6 @@ void SetModeChangeSpeed(AccelStepper &S, AccelStepper &M, AccelStepper &H);
 void RunHandsTime1();
 void RunHandsTime2();
 void UpdateMotorsStepCount();
+void GetAndMoveToTime(bool clock1, bool clock2);
 
 #endif // STEPPERS_H

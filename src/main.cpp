@@ -33,19 +33,8 @@ void setup()
     Homing1();
     // Homing2();
 
-    //______Get Time______
-    GetLocalTimeSafe(timeinfo);
-
-    lastUpdatedTimeData = millis();
-
-    Serial.printf("Time: %02d:%02d:%02d\n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
-
-    //______move to right time______
-    clock1TargetPositions[0] = StepsToMoveToRightHour(0, timeinfo.tm_hour, timeinfo.tm_min);
-    clock1TargetPositions[1] = StepsToMoveToRightMinute(0, timeinfo.tm_min, timeinfo.tm_sec);
-    clock1TargetPositions[2] = StepsToMoveToRightSecond(SensorS1.readAngle(), timeinfo.tm_sec);
-
-    MoveToRightTime1();
+    // Move to the right time
+    GetAndMoveToTime(true, false);
 
     while (millis() - lastUpdatedTimeData < 10000)
     {
@@ -61,12 +50,44 @@ void loop()
 {
     loopTimestamp = millis();
 
-    RunMode();
-
-    if (loopTimestamp - lastUpdatedSteps > 60000)
+    switch (state)
     {
-        UpdateMotorsStepCount();
+    case 0:           // is state is default / display time
+        switch (mode) // execute mode functions
+        {
+        case 0: // Time mode
+            if (lastMode != mode)
+            {
+                GetAndMoveToTime(true, false);
+            }
+
+            steppersMovingMethod = 0; // time mode
+            RunMode1();
+            break;
+        case 1: // Time to mode
+            clock1active = true;
+            clock2active = true;
+            steppersMovingMethod = 1; // multi stepper
+            break;
+        case 2: // Pomodoro timer mode
+            clock1active = false;
+            clock2active = true;
+            steppersMovingMethod = 1; // individual run speed
+            break;
+        default:
+            clock1active = true;
+            clock2active = false;
+            steppersMovingMethod = 0; // time mode
+        }
+
+    case 1: // mode change
+        break;
+
+    case 2: // settings
+        break;
     }
+
+    RunMode1();
 
     switch (steppersMovingMethod)
     {
@@ -98,6 +119,11 @@ void loop()
             H2.runSpeed();
         }
         break;
+    }
+
+    if (loopTimestamp - lastUpdatedSteps > 60000)
+    {
+        UpdateMotorsStepCount();
     }
 
     static uint32_t lastTime = 0;

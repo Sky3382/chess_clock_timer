@@ -445,3 +445,21 @@ void UpdateMotorsStepCount()
         Serial.println(H1.currentPosition());
     }
 }
+
+void GetAndMoveToTime(bool clock1, bool clock2) {
+    //______Get Time______
+    GetLocalTimeSafe(timeinfo);
+
+    lastUpdatedTimeData = millis();
+
+    Serial.printf("Time: %02d:%02d:%02d\n", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+
+    //______move to right time______
+    clock1TargetPositions[0] = StepsToMoveToRightHour(0, timeinfo.tm_hour, timeinfo.tm_min);
+    clock1TargetPositions[1] = StepsToMoveToRightMinute(0, timeinfo.tm_min, timeinfo.tm_sec);
+    clock1TargetPositions[2] = StepsToMoveToRightSecond(SensorS1.readAngle(), timeinfo.tm_sec);
+
+    if (clock1) MoveToRightTime1();
+    if (clock2) MoveToRightTime2();
+    
+}

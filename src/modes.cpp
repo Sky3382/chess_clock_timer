@@ -3,12 +3,12 @@
 #include "globals.h"
 
 
-void RunMode()
+void RunMode1()
 {
-    if (mode == 0)
-    {
-        SetTimeSpeed(S1, M1, H1);
+    SetTimeSpeed(S1, M1, H1);
+}
 
-
-    }
+void RunMode2()
+{
+    
 }

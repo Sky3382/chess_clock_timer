@@ -2,7 +2,8 @@
 #define MODES_H
 
 
-void RunMode();
+void RunMode1();
+void RunMode2();
 
 
 
