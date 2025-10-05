@@ -260,6 +260,11 @@ int StepsToMoveToRightHour(int currentPosition, int hour, int min)
 
     int absoluteTarget = currentPosition + delta;
 
+    if (delta < 0)
+    {
+        absoluteTarget -= stepsPerTurn; // always move forward for minute hand
+    }
+
     Serial.printf("HOUR | Current: %d | TargetBase: %d | Delta: %d | AbsTarget: %d\n",
                   currentPosition, targetBase, delta, absoluteTarget);
 
@@ -298,6 +303,11 @@ int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
 
     int absoluteTarget = currentPosition + delta;
 
+    if (delta < 0)
+    {
+        absoluteTarget -= stepsPerTurn; // always move forward for minute hand
+    }
+
     Serial.printf("MINUTE | Current: %d | TargetBase: %d | Delta: %d | AbsTarget: %d\n",
                   currentPosition, targetBase, delta, absoluteTarget);
 
@@ -333,6 +343,11 @@ int StepsToMoveToRightSecond(int currentSensorPosition, int sec)
 
     // Return the ABSOLUTE step position (not modulo)
     int absoluteTarget = currentPosition + delta;
+
+    if (delta < 0)
+    {
+        absoluteTarget -= stepsPerTurn; // always move forward for minute hand
+    }
 
     Serial.printf("Current Pos: %d | Target Base: %d | Delta: %d | AbsTarget: %d\n",
                   currentPosition, targetPosition, delta, absoluteTarget);

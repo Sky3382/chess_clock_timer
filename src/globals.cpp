@@ -20,6 +20,7 @@ bool clock1active = true;
 bool clock2active = false;
 
 int selectedClock = 0; // which clock is being adjusted in settings mode
+int previousSelectedHand = 0;  // which hand was previously adjusted in settings mode
 int selectedHand = 0;  // which hand is being adjusted in settings mode (0 : hour, 1 : minute, 2 : second)
 
 // Hour-hand timing control

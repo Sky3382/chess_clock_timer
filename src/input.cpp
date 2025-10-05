@@ -1,6 +1,7 @@
 #include <input.h>
 #include <globals.h>
 #include <ESP32encoder.h>
+#include "modes.h"
 
 // Rotary Encoder Instance
 ESP32Encoder encoder;
@@ -74,8 +75,13 @@ void HandleInputs()
     }
     if (button_next.fell())
     {
+        Serial.println("Next button pressed");
         if (state == 2 && mode == 1) {
-            
+
+            lastTimeToHour = timeToHour;
+            lastTimeToMinute = timeToMinute;
+            lastTimeToSecond = timeToSecond;
+
             switch (selectedHand)
             {
                 case 0:

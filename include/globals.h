@@ -24,6 +24,7 @@ extern bool clock1active;
 extern bool clock2active;
 
 extern int selectedClock; // which clock is being adjusted in settings mode
+extern int previousSelectedHand;  // which hand was previously adjusted in settings mode
 extern int selectedHand;  // which hand is being adjusted in settings mode
 
 // Hour-hand timing control
