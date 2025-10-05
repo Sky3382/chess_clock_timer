@@ -10,9 +10,11 @@ int homingSpeed = 1000;
 int modeChangeSpeed = 1000;
 int modeChangeAcceleration = 300;
 
-int SSpeedTime = -341.33; // Hour hand speed in time mode (degrees per minute)   (-(1024 / 3))
-int MSpeedTime = -5.69;   // Minute hand speed in time mode (degrees per minute)    (-(256 / 45))
-int HSpeedTime = -0.95;   // Second hand speed in time mode (degrees per minute)    (-(128 / 135))
+//speeds
+// Move one full turn in 60 seconds for S, 3600 seconds for M, 43200 seconds for H
+float S_speed = (float)STEPS_PER_TURN / 60.0;      // steps per second for second hand
+float M_speed = (float)STEPS_PER_TURN / 3600.0;    // steps per second for minute hand
+float H_speed = (float)STEPS_PER_TURN / 43200.0;   // steps per second for hour hand
 
 // Instantiate steppers (HALF4WIRE)
 AccelStepper S1(AccelStepper::HALF4WIRE, in1PinS1, in3PinS1, in2PinS1, in4PinS1);
@@ -94,8 +96,8 @@ void Homing1()
     M1.setMaxSpeed(1000.0); // reduce speed for homing
     H1.setMaxSpeed(1000.0);
 
-    M1.setSpeed(-homingSpeed); // negative or positive depends on wiring
-    H1.setSpeed(-homingSpeed);
+    M1.setSpeed(homingSpeed); // negative or positive depends on wiring
+    H1.setSpeed(homingSpeed);
 
     bool preRunM = digitalRead(SensorM1);
     bool preRunH = digitalRead(SensorH1);
@@ -149,7 +151,9 @@ void Homing1()
     M1.setCurrentPosition(0);
     H1.setCurrentPosition(0);
 
-    S1.setCurrentPosition((SensorS1.readAngle()) * (20480 / 4096)); // set S1 position based on sensor reading
+    S1.setCurrentPosition((int)(SensorS1.readAngle()) * (20480 / 4096) % STEPS_PER_TURN); // set S1 position based on sensor reading
+    while (S1.currentPosition() < 0)
+        S1.setCurrentPosition(S1.currentPosition() + 20480); // ensure positive position
 }
 
 void Homing2()
@@ -161,8 +165,8 @@ void Homing2()
     M2.setMaxSpeed(1000.0); // reduce speed for homing
     H2.setMaxSpeed(1000.0);
 
-    M2.setSpeed(-homingSpeed); // negative or positive depends on wiring
-    H2.setSpeed(-homingSpeed);
+    M2.setSpeed(homingSpeed); // negative or positive depends on wiring
+    H2.setSpeed(homingSpeed);
 
     bool preRunM = digitalRead(SensorM2);
     bool preRunH = digitalRead(SensorH2);
@@ -216,7 +220,9 @@ void Homing2()
     M2.setCurrentPosition(0);
     H2.setCurrentPosition(0);
 
-    S2.setCurrentPosition((SensorS2.readAngle()) * (20480 / 4096)); // set S2 position based on sensor reading
+    S2.setCurrentPosition((int)(SensorS2.readAngle()) * (20480 / 4096) % STEPS_PER_TURN); // set S2 position based on sensor reading
+    while (S1.currentPosition() < 0)
+        S1.setCurrentPosition(S1.currentPosition() + 20480); // ensure positive position
 }
 
 int StepsToMoveToRightHour(int currentPosition, int hour, int min)
@@ -225,25 +231,31 @@ int StepsToMoveToRightHour(int currentPosition, int hour, int min)
     const double stepsPerHour = (double)stepsPerTurn / 12.0; // 1706.666...
     const double stepsPerMinute = stepsPerHour / 60.0;       // ~28.444...
 
-    // Normaliser l'heure (si > 12)
+    // Normalize hour
     hour %= 12;
 
-    // Calculer la position cible en pas
-    int targetPosition = (int)-(stepsPerHour * hour + stepsPerMinute * min) % stepsPerTurn;
+    // Compute target position within one revolution
+    int targetBase = (int)(stepsPerHour * hour + stepsPerMinute * min);
+    targetBase = (targetBase % stepsPerTurn + stepsPerTurn) % stepsPerTurn;
 
-    // Calculer le delta (positif = antihoraire, négatif = horaire)
-    int delta = (currentPosition - targetPosition) % stepsPerTurn;
-    if (delta < 0)
+    // Normalize current position
+    currentPosition = (currentPosition % stepsPerTurn + stepsPerTurn) % stepsPerTurn;
+
+    // Compute shortest delta
+    int delta = targetBase - currentPosition;
+    if (delta > stepsPerTurn / 2)
+        delta -= stepsPerTurn;
+    else if (delta < -stepsPerTurn / 2)
         delta += stepsPerTurn;
 
-    // Choisir le chemin le plus court
-    if (delta > stepsPerTurn / 2)
-    {
-        delta -= stepsPerTurn;
-    }
+    int absoluteTarget = currentPosition + delta;
 
-    return targetPosition; // positif = CCW, négatif = CW
+    Serial.printf("HOUR | Current: %d | TargetBase: %d | Delta: %d | AbsTarget: %d\n",
+                  currentPosition, targetBase, delta, absoluteTarget);
+
+    return absoluteTarget % STEPS_PER_TURN; // Absolute position, not wrapped
 }
+
 
 int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
 {
@@ -251,7 +263,7 @@ int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
     const double stepsPerMinute = (double)stepsPerTurn / 60.0; // 341.333...
     const double stepsPerSecond = stepsPerMinute / 60.0;       // ~5.6889
 
-    // Normalize input
+    // Normalize input (+10s offset)
     sec += 10;
     if (sec >= 60)
     {
@@ -259,68 +271,65 @@ int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
         min++;
     }
     if (min >= 60)
-    {
         min -= 60;
-    }
 
-    // Compute target step
-    int targetPosition = (int)-(stepsPerMinute * min + stepsPerSecond * sec) % stepsPerTurn;
+    // Compute target position within one revolution
+    int targetBase = (int)(stepsPerMinute * min + stepsPerSecond * sec);
+    targetBase = (targetBase % stepsPerTurn + stepsPerTurn) % stepsPerTurn;
 
-    // Compute delta (positive = CCW, negative = CW)
-    int delta = (currentPosition - targetPosition) % stepsPerTurn;
-    if (delta < 0)
+    // Normalize current position
+    currentPosition = (currentPosition % stepsPerTurn + stepsPerTurn) % stepsPerTurn;
+
+    // Compute shortest delta
+    int delta = targetBase - currentPosition;
+    if (delta > stepsPerTurn / 2)
+        delta -= stepsPerTurn;
+    else if (delta < -stepsPerTurn / 2)
         delta += stepsPerTurn;
 
-    // Choose the shortest path
-    if (delta > stepsPerTurn / 2)
-    {
-        delta -= stepsPerTurn; // flips direction
-    }
+    int absoluteTarget = currentPosition + delta;
 
-    return targetPosition; // positive = CCW, negative = CW
+    Serial.printf("MINUTE | Current: %d | TargetBase: %d | Delta: %d | AbsTarget: %d\n",
+                  currentPosition, targetBase, delta, absoluteTarget);
+
+    return absoluteTarget % STEPS_PER_TURN; // Absolute position, not wrapped
 }
 
-int StepsToMoveToRightSecond(int currentSensorPosition, int sec)
 
-// Return THE ABSOLUTE POSITION AND NOT THE DELTA
+int StepsToMoveToRightSecond(int currentSensorPosition, int sec)
 {
     const int stepsPerTurn = 20480;
     const double stepsPerSecond = (double)stepsPerTurn / 60.0; // 341.333...
 
-    // Convertir la position capteur (0–4096) en pas (0–20480)
-    // Négatif car orientation inversée
-    int currentPosition = (currentSensorPosition * (-(stepsPerTurn) / 4096.0));
+    // Convert sensor position (0–4096) → motor steps (0–20480)
+    // Negative sign because direction is inverted
+    int currentPosition = (int)(currentSensorPosition * (-(stepsPerTurn) / 4096.0));
 
-    // Serial.println(currentPosition);  Thanks a lot for helping me debug
+    // Normalize to 0–stepsPerTurn
+    currentPosition = (currentPosition % stepsPerTurn + stepsPerTurn) % stepsPerTurn;
 
-    // Décalage de +10 secondes
-    sec += 10;
-    if (sec >= 60)
-    {
-        sec -= 60;
-    }
+    // Offset +10 seconds (for mechanical alignment)
+    sec = (sec + 10) % 60;
 
-    // Position cible
-    int targetPosition = (int)-(stepsPerSecond * sec) % stepsPerTurn;
+    // Target position in steps (0–stepsPerTurn)
+    int targetPosition = (int)(stepsPerSecond * sec);
 
-    // Serial.println(targetPosition); You too
+    // Compute raw delta
+    int delta = targetPosition - currentPosition;
 
-    // Calcul du delta
-    int delta = (targetPosition - currentPosition);
+    // Normalize delta to range -stepsPerTurn/2 .. +stepsPerTurn/2
+    if (delta > stepsPerTurn / 2)
+        delta -= stepsPerTurn;
+    else if (delta < -stepsPerTurn / 2)
+        delta += stepsPerTurn;
 
-    // Choose the shortest path
-    if (delta < -stepsPerTurn / 2)
-    {
-        delta += stepsPerTurn; // flips direction
-    }
-    else if (delta > stepsPerTurn / 2)
-    {
-        delta -= stepsPerTurn; // flips direction
-    }
+    // Return the ABSOLUTE step position (not modulo)
+    int absoluteTarget = currentPosition + delta;
 
-    // Serial.println(delta); And you too
+    Serial.printf("Current Pos: %d | Target Base: %d | Delta: %d | AbsTarget: %d\n",
+                  currentPosition, targetPosition, delta, absoluteTarget);
 
-    return targetPosition; // positif = CCW, négatif = CW
+    return absoluteTarget % STEPS_PER_TURN; // Absolute position, not wrapped
 }
 
 void MoveToRightTime1()
@@ -349,17 +358,18 @@ void MoveToRightTime2()
 
 void SetTimeSpeed(AccelStepper &S, AccelStepper &M, AccelStepper &H)
 {
-    H.setMaxSpeed(800.0);
-    H.setSpeed(HSpeedTime);
-    H.enableOutputs();
 
-    M.setMaxSpeed(10.0);
-    M.setSpeed(MSpeedTime);
+    S.setMaxSpeed(S_speed);
+    S.setSpeed(S_speed);
+    S.enableOutputs();
+
+    M.setMaxSpeed(M_speed);
+    M.setSpeed(M_speed);
     M.enableOutputs();
 
-    S.setMaxSpeed(800.0);
-    S.setSpeed(SSpeedTime);
-    S.enableOutputs();
+    H.setMaxSpeed(H_speed);
+    H.setSpeed(H_speed);
+    H.enableOutputs();
 }
 
 void SetModeChangeSpeed(AccelStepper &S, AccelStepper &M, AccelStepper &H)
@@ -434,17 +444,12 @@ void RunHandsTime2()
 
 void UpdateMotorsStepCount()
 {
-    // periodic housekeeping: normalize positions every minute
-    static unsigned long lastUpdatedSteps_local = 0;
-    unsigned long now = millis();
-    if (now - lastUpdatedSteps_local > 60000)
-    {
-        M1.setCurrentPosition(M1.currentPosition() % 4096);
-        H1.setCurrentPosition(H1.currentPosition() % 4096);
-        lastUpdatedSteps_local = now;
-        Serial.println(M1.currentPosition());
-        Serial.println(H1.currentPosition());
-    }
+    S1.setCurrentPosition(S1.currentPosition() % STEPS_PER_TURN);
+    M1.setCurrentPosition(M1.currentPosition() % STEPS_PER_TURN);
+    H1.setCurrentPosition(H1.currentPosition() % STEPS_PER_TURN);
+    S2.setCurrentPosition(S2.currentPosition() % STEPS_PER_TURN);
+    M2.setCurrentPosition(M2.currentPosition() % STEPS_PER_TURN);
+    H2.setCurrentPosition(H2.currentPosition() % STEPS_PER_TURN);
 }
 
 void GetAndMoveToTime(bool clock1, bool clock2) {

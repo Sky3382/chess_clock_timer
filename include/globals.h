@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#define STEPS_PER_TURN 20480 // 28BYJ-48 with 1/64 reduction
+
 // Timestamps
 extern unsigned long loopTimestamp;
 extern unsigned long lastHourHandMovement;

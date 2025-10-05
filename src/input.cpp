@@ -11,7 +11,8 @@ Bounce button_back;
 Bounce button_mode;
 Bounce button_enter;
 
-long last_encoder_position = 0; // track previous position
+int reference_encoder_position = 0; // position when entering state 1
+int last_encoder_position = 0; // track previous position
 
 void InitEncoder()
 {

@@ -25,6 +25,9 @@ extern Bounce button_back;
 extern Bounce button_mode;
 extern Bounce button_enter;
 
+extern int reference_encoder_position; // position when entering state 1
+extern int last_encoder_position; // track previous position
+
 extern void InitEncoder();
 extern void InitButtons();
 extern void HandleInputs();

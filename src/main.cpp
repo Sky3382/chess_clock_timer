@@ -62,10 +62,13 @@ void loop()
             if (lastState != state && state == 0)
             {
                 GetAndMoveToTime(true, false);
+                while (millis() - lastUpdatedTimeData < 10000)
+                {
+                    delay(1);
+                }
             }
 
             steppersMovingMethod = 0; // time mode
-            RunMode1();
             break;
         case 1: // Time to mode
             clock1active = true;
@@ -82,38 +85,59 @@ void loop()
             clock2active = false;
             steppersMovingMethod = 0; // time mode
         }
+        break;
 
     case 1: // mode change
+    {
+        if (lastState != state && state == 1)
+        {
+            reference_encoder_position = encoder.getCount();
+            last_encoder_position = reference_encoder_position;
+            Serial.printf("Reference encoder position: %d\n", reference_encoder_position);
+        }
+
+        mode = (encoder.getCount() - reference_encoder_position);
+        if (mode < 0)
+            mode = 0;
+        if (mode > 2)
+            mode = 2;
+        
+        // Set minute and hour hands to zero, second hand to mode position
+        clock1TargetPositions[0] = 0;                   // minute hand
+        clock1TargetPositions[1] = 0;                   // hour hand
+        clock1TargetPositions[2] = (20480 / 12) * mode; // second hand
+
         steppersMovingMethod = 1; // multi stepper
-        clock1TargetPositions[0] = 0;
-        clock1TargetPositions[1] = 0;
-        clock1TargetPositions[2] = (20480/12)*mode; // set H to position based on mode
-        break;
+    }
+    break;
 
     case 2: // settings
         break;
     }
 
-
     switch (steppersMovingMethod)
     {
-    case 0: //Time mode
+    case 0: // Time mode
         if (clock1active)
             SetTimeSpeed(S1, M1, H1);
-            RunHandsTime1();
+        RunHandsTime1();
 
         if (clock2active)
             SetTimeSpeed(S2, M2, H2);
-            RunHandsTime2();
+        RunHandsTime2();
 
         break;
-    case 1: //Multi stepper
+    case 1: // Multi stepper
         if (clock1active)
-            Clock1.run();
+            SetModeChangeSpeed(S1, M1, H1);
+        Clock1.moveTo(clock1TargetPositions);
+        Clock1.run();
         if (clock2active)
-            Clock2.run();
+            SetModeChangeSpeed(S2, M2, H2);
+        Clock2.moveTo(clock2TargetPositions);
+        Clock2.run();
 
-    case 2: //Individual run speed
+    case 2: // Individual run speed
         if (clock1active)
         {
             S1.runSpeed();
@@ -122,6 +146,7 @@ void loop()
         }
         if (clock2active)
         {
+
             S2.runSpeed();
             M2.runSpeed();
             H2.runSpeed();
@@ -129,17 +154,16 @@ void loop()
         break;
     }
 
-    
+    // Update step count
 
-    // Update step count every minute
-
-    if (loopTimestamp - lastUpdatedSteps > 60000)
-    {
-        UpdateMotorsStepCount();
-    }
-
+    UpdateMotorsStepCount();
 
     // Save last mode and state
     lastMode = mode;
     lastState = state;
+
+    // if (loopTimestamp % 2000 == 10)
+    //{
+    //     Serial.printf("Mode: %d, State: %d, SteppersMethod: %d\n", mode, state, steppersMovingMethod);
+    // }
 }
