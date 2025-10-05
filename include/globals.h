@@ -23,6 +23,9 @@ extern int steppersMovingMethod; // 0 is time mode, 1 is multi stepper (target p
 extern bool clock1active;
 extern bool clock2active;
 
+extern int selectedClock; // which clock is being adjusted in settings mode
+extern int selectedHand;  // which hand is being adjusted in settings mode
+
 // Hour-hand timing control
 extern unsigned long previousHMillis;
 extern bool h1Active;

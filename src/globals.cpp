@@ -19,6 +19,9 @@ int steppersMovingMethod = 0; // 0 is time mode, 1 is multi stepper (target posi
 bool clock1active = true;
 bool clock2active = false;
 
+int selectedClock = 0; // which clock is being adjusted in settings mode
+int selectedHand = 0;  // which hand is being adjusted in settings mode (0 : hour, 1 : minute, 2 : second)
+
 // Hour-hand timing control
 unsigned long previousHMillis = 0;
 bool h1Active = false;

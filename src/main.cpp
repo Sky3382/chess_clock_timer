@@ -23,7 +23,11 @@ void setup()
 
     //______Initialize multimotors______
     SetModeChangeSpeed(S1, M1, H1);
-    InitSteppers1();
+    InitClockSteppers1();
+    homerM1.begin();
+    homerH1.begin();
+    // homerM2.begin();
+    // homerH2.begin();
     InitSensors1();
     // InitSteppers2();
     // InitSensors2();
@@ -33,11 +37,13 @@ void setup()
     //______Motors to zero______
     Homing1();
     // Homing2();
+    //homerM1.update();
+    //homerH1.update();
 
     // Move to the right time
     GetAndMoveToTime(true, false);
 
-    while (millis() - lastUpdatedTimeData < 10000)
+    while (millis() - lastUpdatedTimeData < adjust_hands_speed)
     {
         delay(1);
     }
@@ -62,7 +68,7 @@ void loop()
             if (lastState != state && state == 0)
             {
                 GetAndMoveToTime(true, false);
-                while (millis() - lastUpdatedTimeData < 10000)
+                while (millis() - lastUpdatedTimeData < adjust_hands_speed)
                 {
                     delay(1);
                 }
@@ -96,22 +102,62 @@ void loop()
             Serial.printf("Reference encoder position: %d\n", reference_encoder_position);
         }
 
-        mode = (encoder.getCount() - reference_encoder_position);
-        if (mode < 0)
-            mode = 0;
-        if (mode > 2)
-            mode = 2;
-        
+        int encoderDelta = GetPostionFromEncoder(encoder) - reference_encoder_position;
+        selectedMode = encoderDelta; // each two clicks is one mode step
+        if (selectedMode < 0)
+        {
+            selectedMode = 0;
+            reference_encoder_position = GetPostionFromEncoder(encoder);
+        }
+        else if (selectedMode > 2)
+        {
+            selectedMode = 2;
+            reference_encoder_position = GetPostionFromEncoder(encoder) - 2;
+        }
+
         // Set minute and hour hands to zero, second hand to mode position
         clock1TargetPositions[0] = 0;                   // minute hand
         clock1TargetPositions[1] = 0;                   // hour hand
-        clock1TargetPositions[2] = (20480 / 12) * mode; // second hand
+        clock1TargetPositions[2] = (20480 / 12) * selectedMode; // second hand
 
         steppersMovingMethod = 1; // multi stepper
     }
     break;
 
     case 2: // settings
+        if (lastState == 1 && state == 2)
+        {
+            mode = selectedMode; // confirm selected mode
+            Serial.printf("Mode set to: %d\n", mode);
+            Serial.print("entering settings state");
+        }
+        steppersMovingMethod = 1; // multi stepper
+        switch (mode)
+        {
+        case 1: // Time to mode
+            if (selectedClock == 0)
+            {
+                clock1TargetPositions[0] = timeToHour;                   // minute hand
+                clock1TargetPositions[1] = timeToMinute;                   // hour hand
+                clock1TargetPositions[2] = timeToSecond; // second hand
+
+                clock2TargetPositions[0] = 0;                   // minute hand
+                clock2TargetPositions[1] = 0;                   // hour hand
+                clock2TargetPositions[2] = 0; // second hand
+            }
+            else
+            {
+                clock1TargetPositions[0] = 0;                   // minute hand
+                clock1TargetPositions[1] = 0;                   // hour hand
+                clock1TargetPositions[2] = 0; // second hand
+
+                clock2TargetPositions[0] = timeToHour;                   // minute hand
+                clock2TargetPositions[1] = timeToMinute;                   // hour hand
+                clock2TargetPositions[2] = timeToSecond; // second hand
+            }
+            break;
+        
+        }
         break;
     }
 
@@ -157,6 +203,10 @@ void loop()
     // Update step count
 
     UpdateMotorsStepCount();
+
+    if (state != lastState) {
+        calibrateSecondHand(S1, SensorS1);
+    }
 
     // Save last mode and state
     lastMode = mode;

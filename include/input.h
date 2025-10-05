@@ -6,7 +6,7 @@
 #include <Bounce2.h>
 
 // Rotary Encoder Pins
-#define ENCODER1_PIN_A 39  
+#define ENCODER1_PIN_A 39
 #define ENCODER1_PIN_B 40
 
 #define BUTTON_ENCODER_PIN 4
@@ -26,10 +26,12 @@ extern Bounce button_mode;
 extern Bounce button_enter;
 
 extern int reference_encoder_position; // position when entering state 1
-extern int last_encoder_position; // track previous position
+extern int last_encoder_position;      // track previous position
 
 extern void InitEncoder();
 extern void InitButtons();
 extern void HandleInputs();
+
+extern int GetPostionFromEncoder(ESP32Encoder encoderinquestion);
 
 #endif

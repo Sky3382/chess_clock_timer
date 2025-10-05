@@ -12,7 +12,7 @@ Bounce button_mode;
 Bounce button_enter;
 
 int reference_encoder_position = 0; // position when entering state 1
-int last_encoder_position = 0; // track previous position
+int last_encoder_position = 0;      // track previous position
 
 void InitEncoder()
 {
@@ -51,6 +51,15 @@ void HandleInputs()
 
     if (button_back.fell())
     {
+        if (state == 1)
+        {
+            state = 0; // Change to mode change state
+            Serial.println("Entering mode change state");
+        } else if (state == 2)
+        {
+            state = 1; // Change to settings state
+            Serial.println("Entering settings state");
+        }
         Serial.println("Back button pressed");
     }
     if (button_mode.fell())
@@ -70,10 +79,25 @@ void HandleInputs()
             state = 1; // Change to mode change state
             Serial.println("Entering mode change state");
         }
-        else
+        else if (state == 1)
+        {   
+            if (selectedMode != mode) { // Only enter settings if mode has changed or not in time mode
+                state = 2; // Change to settings state
+            Serial.println("Entering settings state");
+            } else if (selectedMode == 0) {
+                state = 0; // If in time mode and no change, go back to normal state
+                mode = 0;
+                Serial.println("Entering normal state in time mode");
+
+            } else {
+                state = 0; // Change to normal state
+                Serial.println("Entering normal state");
+            }
+            
+        } else if (state == 2)
         {
-            state = 0; // Return to normal mode
-            Serial.println("Returning to normal mode");
+            state = 0; // Change to normal state
+            Serial.println("Entering normal state");
         }
     }
 
@@ -88,4 +112,9 @@ void HandleInputs()
             last_encoder_position = position;
         }
     }
+}
+
+int GetPostionFromEncoder(ESP32Encoder encoderinquestion)
+{
+    return -encoderinquestion.getCount() / 2;
 }

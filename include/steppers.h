@@ -4,6 +4,7 @@
 #include <AccelStepper.h>
 #include <MultiStepper.h>
 #include <AS5600.h>
+#include "stepper_homer.h"
 
 // Pin definitions
 #define in4PinS1 15
@@ -49,11 +50,7 @@ extern AS5600 SensorS2;
 extern int homingSpeed;
 extern int modeChangeSpeed;
 extern int modeChangeAcceleration;
-
-// Variables
-extern int HSpeedTime; // Hour hand speed in time mode (degrees per minute)
-extern int MSpeedTime; // Minute hand speed in time mode (degrees per minute)
-extern int SSpeedTime; // Second hand speed in time mode (degrees per minute)
+extern int adjust_hands_speed; // in milliseconds
 
 // Externs for steppers and controller
 extern AccelStepper S1;
@@ -66,6 +63,11 @@ extern AccelStepper M2;
 extern AccelStepper H2;
 extern MultiStepper Clock2;
 
+extern StepperHomer homerM1;
+extern StepperHomer homerH1;
+extern StepperHomer homerM2;
+extern StepperHomer homerH2;
+
 // Targets arrays
 extern long clock1TargetPositions[3];
 extern long clock2TargetPositions[3];
@@ -77,12 +79,13 @@ extern unsigned long lastUpdatedTimeData;
 extern unsigned long lastUpdatedHour;
 
 // Functions
-void InitSteppers1();
-void InitSteppers2();
+void InitClockSteppers1();
+void InitClockSteppers2();
 void InitSensors1();
 void InitSensors2();
 void Homing1();
 void Homing2();
+void calibrateSecondHand(AccelStepper &S, AS5600 &Sensor);
 int StepsToMoveToRightHour(int currentPosition, int hour, int min);
 int StepsToMoveToRightMinute(int currentPosition, int min, int sec);
 int StepsToMoveToRightSecond(int currentPosition, int sec);

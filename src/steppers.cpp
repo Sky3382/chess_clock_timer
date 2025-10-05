@@ -4,17 +4,19 @@
 #include "time_utils.h"
 #include "globals.h"
 #include "AS5600.h"
+#include "stepper_homer.h"
 
 // Configuration Variables
 int homingSpeed = 1000;
 int modeChangeSpeed = 1000;
-int modeChangeAcceleration = 300;
+int modeChangeAcceleration = 200;
+int adjust_hands_speed = 12000; // time in ms to move hands to correct time
 
-//speeds
-// Move one full turn in 60 seconds for S, 3600 seconds for M, 43200 seconds for H
-float S_speed = (float)STEPS_PER_TURN / 60.0;      // steps per second for second hand
-float M_speed = (float)STEPS_PER_TURN / 3600.0;    // steps per second for minute hand
-float H_speed = (float)STEPS_PER_TURN / 43200.0;   // steps per second for hour hand
+// speeds
+//  Move one full turn in 60 seconds for S, 3600 seconds for M, 43200 seconds for H
+float S_speed = (float)STEPS_PER_TURN / 60.0;    // steps per second for second hand
+float M_speed = (float)STEPS_PER_TURN / 3600.0;  // steps per second for minute hand
+float H_speed = (float)STEPS_PER_TURN / 43200.0; // steps per second for hour hand
 
 // Instantiate steppers (HALF4WIRE)
 AccelStepper S1(AccelStepper::HALF4WIRE, in1PinS1, in3PinS1, in2PinS1, in4PinS1);
@@ -27,13 +29,18 @@ AccelStepper M2(AccelStepper::HALF4WIRE, in1PinM2, in3PinM2, in2PinM2, in4PinM2)
 AccelStepper H2(AccelStepper::HALF4WIRE, in1PinH2, in3PinH2, in2PinH2, in4PinH2);
 MultiStepper Clock2;
 
+StepperHomer homerM1(&M1, SensorM1, homingSpeed);
+StepperHomer homerH1(&H1, SensorH1, homingSpeed);
+StepperHomer homerM2(&M2, SensorM2, homingSpeed);
+StepperHomer homerH2(&H2, SensorH2, homingSpeed);
+
 long clock1TargetPositions[3] = {0, 0, 0};
 long clock2TargetPositions[3] = {0, 0, 0};
 
 AS5600 SensorS1;
 AS5600 SensorS2;
 
-void InitSteppers1()
+void InitClockSteppers1()
 {
     // add to multistepper in same order as target array
     Clock1.addStepper(H1);
@@ -41,7 +48,7 @@ void InitSteppers1()
     Clock1.addStepper(S1);
 }
 
-void InitSteppers2()
+void InitClockSteppers2()
 {
     // add to multistepper in same order as target array
     Clock2.addStepper(H2);
@@ -151,9 +158,7 @@ void Homing1()
     M1.setCurrentPosition(0);
     H1.setCurrentPosition(0);
 
-    S1.setCurrentPosition((int)(SensorS1.readAngle()) * (20480 / 4096) % STEPS_PER_TURN); // set S1 position based on sensor reading
-    while (S1.currentPosition() < 0)
-        S1.setCurrentPosition(S1.currentPosition() + 20480); // ensure positive position
+    calibrateSecondHand(S1, SensorS1);
 }
 
 void Homing2()
@@ -220,9 +225,14 @@ void Homing2()
     M2.setCurrentPosition(0);
     H2.setCurrentPosition(0);
 
-    S2.setCurrentPosition((int)(SensorS2.readAngle()) * (20480 / 4096) % STEPS_PER_TURN); // set S2 position based on sensor reading
-    while (S1.currentPosition() < 0)
-        S1.setCurrentPosition(S1.currentPosition() + 20480); // ensure positive position
+    calibrateSecondHand(S2, SensorS2);
+}
+
+void calibrateSecondHand(AccelStepper &S, AS5600 &SensorS)
+{
+    S.setCurrentPosition((int)(SensorS.readAngle()) * (20480 / 4096) % STEPS_PER_TURN); // set S2 position based on sensor reading
+    while (S.currentPosition() < 0)
+        S.setCurrentPosition(S.currentPosition() + 20480); // ensure positive position
 }
 
 int StepsToMoveToRightHour(int currentPosition, int hour, int min)
@@ -243,9 +253,9 @@ int StepsToMoveToRightHour(int currentPosition, int hour, int min)
 
     // Compute shortest delta
     int delta = targetBase - currentPosition;
-    if (delta > stepsPerTurn / 2)
+    while (delta >= stepsPerTurn / 2)
         delta -= stepsPerTurn;
-    else if (delta < -stepsPerTurn / 2)
+    while (delta <= -stepsPerTurn / 2)
         delta += stepsPerTurn;
 
     int absoluteTarget = currentPosition + delta;
@@ -256,7 +266,6 @@ int StepsToMoveToRightHour(int currentPosition, int hour, int min)
     return absoluteTarget % STEPS_PER_TURN; // Absolute position, not wrapped
 }
 
-
 int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
 {
     const int stepsPerTurn = 20480;
@@ -264,7 +273,7 @@ int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
     const double stepsPerSecond = stepsPerMinute / 60.0;       // ~5.6889
 
     // Normalize input (+10s offset)
-    sec += 10;
+    sec += adjust_hands_speed / 1000; // add offset to seconds for mechanical alignment
     if (sec >= 60)
     {
         sec -= 60;
@@ -282,9 +291,9 @@ int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
 
     // Compute shortest delta
     int delta = targetBase - currentPosition;
-    if (delta > stepsPerTurn / 2)
+    while (delta >= stepsPerTurn / 2)
         delta -= stepsPerTurn;
-    else if (delta < -stepsPerTurn / 2)
+    while (delta <= -stepsPerTurn / 2)
         delta += stepsPerTurn;
 
     int absoluteTarget = currentPosition + delta;
@@ -294,7 +303,6 @@ int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
 
     return absoluteTarget % STEPS_PER_TURN; // Absolute position, not wrapped
 }
-
 
 int StepsToMoveToRightSecond(int currentSensorPosition, int sec)
 {
@@ -308,8 +316,8 @@ int StepsToMoveToRightSecond(int currentSensorPosition, int sec)
     // Normalize to 0–stepsPerTurn
     currentPosition = (currentPosition % stepsPerTurn + stepsPerTurn) % stepsPerTurn;
 
-    // Offset +10 seconds (for mechanical alignment)
-    sec = (sec + 10) % 60;
+    // Offset +12 seconds (for mechanical alignment)
+    sec = (sec + (adjust_hands_speed / 1000)) % 60;
 
     // Target position in steps (0–stepsPerTurn)
     int targetPosition = (int)(stepsPerSecond * sec);
@@ -318,9 +326,9 @@ int StepsToMoveToRightSecond(int currentSensorPosition, int sec)
     int delta = targetPosition - currentPosition;
 
     // Normalize delta to range -stepsPerTurn/2 .. +stepsPerTurn/2
-    if (delta > stepsPerTurn / 2)
+    while (delta >= stepsPerTurn / 2)
         delta -= stepsPerTurn;
-    else if (delta < -stepsPerTurn / 2)
+    while (delta <= -stepsPerTurn / 2)
         delta += stepsPerTurn;
 
     // Return the ABSOLUTE step position (not modulo)
@@ -452,7 +460,8 @@ void UpdateMotorsStepCount()
     H2.setCurrentPosition(H2.currentPosition() % STEPS_PER_TURN);
 }
 
-void GetAndMoveToTime(bool clock1, bool clock2) {
+void GetAndMoveToTime(bool clock1, bool clock2)
+{
     //______Get Time______
     GetLocalTimeSafe(timeinfo);
 
@@ -465,7 +474,8 @@ void GetAndMoveToTime(bool clock1, bool clock2) {
     clock1TargetPositions[1] = StepsToMoveToRightMinute(0, timeinfo.tm_min, timeinfo.tm_sec);
     clock1TargetPositions[2] = StepsToMoveToRightSecond(SensorS1.readAngle(), timeinfo.tm_sec);
 
-    if (clock1) MoveToRightTime1();
-    if (clock2) MoveToRightTime2();
-    
+    if (clock1)
+        MoveToRightTime1();
+    if (clock2)
+        MoveToRightTime2();
 }

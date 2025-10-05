@@ -2,6 +2,9 @@
 #include "steppers.h"
 #include "globals.h"
 
+int timeToHour = 0;
+int timeToMinute = 0;
+int timeToSecond = 0;
 
 void RunMode1()
 {
