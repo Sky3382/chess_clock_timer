@@ -11,8 +11,9 @@
 
 #define BUTTON_ENCODER_PIN 4
 #define BUTTON_BACK_PIN 5
-#define BUTTON_MODE_PIN 6
-#define BUTTON_ENTER_PIN 7
+#define BUTTON_NEXT_PIN 6
+
+#define switchPin 12
 
 #define BUTTON_DEBOUNCE_INTERVAL 50 // milliseconds
 
@@ -22,8 +23,9 @@ extern ESP32Encoder encoder;
 // Button Instances
 extern Bounce button_encoder;
 extern Bounce button_back;
-extern Bounce button_mode;
-extern Bounce button_enter;
+extern Bounce button_next;
+
+extern bool switchState;
 
 extern int reference_encoder_position; // position when entering state 1
 extern int last_encoder_position;      // track previous position

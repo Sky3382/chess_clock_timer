@@ -131,15 +131,45 @@ void loop()
             Serial.printf("Mode set to: %d\n", mode);
             Serial.print("entering settings state");
         }
-        steppersMovingMethod = 1; // multi stepper
+
+        if (lastState != state && state == 2)
+        {
+            reference_encoder_position = encoder.getCount();
+            last_encoder_position = reference_encoder_position;
+            Serial.printf("Reference encoder position: %d\n", reference_encoder_position);
+        }
+
+        int encoderDelta = GetPostionFromEncoder(encoder) - reference_encoder_position;
+           
+
+
         switch (mode)
         {
         case 1: // Time to mode
+            const int stepsPerTurn = 20480;
+            const double stepsPerHour = (double)stepsPerTurn / 12.0; // 1706.666...
+            const double stepsPerMinute = stepsPerHour / 60.0;       // ~28.444...
+            const double stepsPerSecond = stepsPerMinute / 60.0;       // ~5.6889
+
             if (selectedClock == 0)
             {
-                clock1TargetPositions[0] = timeToHour;                   // minute hand
-                clock1TargetPositions[1] = timeToMinute;                   // hour hand
-                clock1TargetPositions[2] = timeToSecond; // second hand
+                switch (selectedHand)
+                {
+                case 0: // hour hand
+                    timeToHour = encoderDelta; // each step is 5 hours
+                    break;
+                
+                case 1: // minute hand
+                    timeToMinute = encoderDelta; // each step is 5 minutes
+                    break;
+                
+                case 2: // second hand
+                    timeToSecond = encoderDelta; // each step is 5 seconds
+                }
+
+                clock1TargetPositions[0] = timeToHour * stepsPerHour;                   // minute hand
+                clock1TargetPositions[1] = timeToMinute * stepsPerMinute;                   // hour hand
+                clock1TargetPositions[2] = timeToSecond * stepsPerSecond; // second hand
 
                 clock2TargetPositions[0] = 0;                   // minute hand
                 clock2TargetPositions[1] = 0;                   // hour hand
@@ -151,14 +181,18 @@ void loop()
                 clock1TargetPositions[1] = 0;                   // hour hand
                 clock1TargetPositions[2] = 0; // second hand
 
-                clock2TargetPositions[0] = timeToHour;                   // minute hand
-                clock2TargetPositions[1] = timeToMinute;                   // hour hand
-                clock2TargetPositions[2] = timeToSecond; // second hand
+                clock2TargetPositions[0] = timeToHour * stepsPerHour;                   // minute hand
+                clock2TargetPositions[1] = timeToMinute * stepsPerMinute;                   // hour hand
+                clock2TargetPositions[2] = timeToSecond * stepsPerSecond; // second hand
             }
             break;
         
         }
+
+        steppersMovingMethod = 1; // multi stepper
+
         break;
+
     }
 
     switch (steppersMovingMethod)

@@ -452,12 +452,23 @@ void RunHandsTime2()
 
 void UpdateMotorsStepCount()
 {
-    S1.setCurrentPosition(S1.currentPosition() % STEPS_PER_TURN);
-    M1.setCurrentPosition(M1.currentPosition() % STEPS_PER_TURN);
-    H1.setCurrentPosition(H1.currentPosition() % STEPS_PER_TURN);
-    S2.setCurrentPosition(S2.currentPosition() % STEPS_PER_TURN);
-    M2.setCurrentPosition(M2.currentPosition() % STEPS_PER_TURN);
-    H2.setCurrentPosition(H2.currentPosition() % STEPS_PER_TURN);
+    auto normalize = [](long pos)
+    {
+        long half = STEPS_PER_TURN / 2;
+        pos = pos % STEPS_PER_TURN;
+        if (pos > half)
+            pos -= STEPS_PER_TURN;
+        else if (pos < -half)
+            pos += STEPS_PER_TURN;
+        return pos;
+    };
+
+    S1.setCurrentPosition(normalize(S1.currentPosition()));
+    M1.setCurrentPosition(normalize(M1.currentPosition()));
+    H1.setCurrentPosition(normalize(H1.currentPosition()));
+    S2.setCurrentPosition(normalize(S2.currentPosition()));
+    M2.setCurrentPosition(normalize(M2.currentPosition()));
+    H2.setCurrentPosition(normalize(H2.currentPosition()));
 }
 
 void GetAndMoveToTime(bool clock1, bool clock2)

@@ -13,5 +13,4 @@ void RunMode1()
 
 void RunMode2()
 {
-    
 }
