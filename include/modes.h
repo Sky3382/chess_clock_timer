@@ -11,6 +11,6 @@ extern int lastTimeToSecond;
 extern int timeToClock;
 
 void RunMode1();
-void RunMode2();
+void MoveToTimeTo(int timeToClock);
 
 #endif // MODES_H

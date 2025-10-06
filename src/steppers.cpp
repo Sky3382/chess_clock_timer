@@ -40,6 +40,16 @@ long clock2TargetPositions[3] = {0, 0, 0};
 AS5600 SensorS1;
 AS5600 SensorS2;
 
+const int stepsPerTurn = 20480;
+const double hourStepsPerHour = (double)stepsPerTurn / 12.0;
+const double hourStepsPerMinute = hourStepsPerHour / 60.0;
+const double hourStepsPerSecond = hourStepsPerMinute / 60.0;
+
+const double minuteStepsPerMinute = stepsPerTurn / 60.0;
+const double minuteStepsPerSecond = minuteStepsPerMinute / 60.0;
+
+const double secondStepsPerSecond = stepsPerTurn / 60.0;
+
 void InitClockSteppers1()
 {
     // add to multistepper in same order as target array
@@ -260,11 +270,6 @@ int StepsToMoveToRightHour(int currentPosition, int hour, int min)
 
     int absoluteTarget = currentPosition + delta;
 
-    if (delta < 0)
-    {
-        absoluteTarget -= stepsPerTurn; // always move forward for minute hand
-    }
-
     Serial.printf("HOUR | Current: %d | TargetBase: %d | Delta: %d | AbsTarget: %d\n",
                   currentPosition, targetBase, delta, absoluteTarget);
 
@@ -303,11 +308,6 @@ int StepsToMoveToRightMinute(int currentPosition, int min, int sec)
 
     int absoluteTarget = currentPosition + delta;
 
-    if (delta < 0)
-    {
-        absoluteTarget -= stepsPerTurn; // always move forward for minute hand
-    }
-
     Serial.printf("MINUTE | Current: %d | TargetBase: %d | Delta: %d | AbsTarget: %d\n",
                   currentPosition, targetBase, delta, absoluteTarget);
 
@@ -343,11 +343,6 @@ int StepsToMoveToRightSecond(int currentSensorPosition, int sec)
 
     // Return the ABSOLUTE step position (not modulo)
     int absoluteTarget = currentPosition + delta;
-
-    if (delta < 0)
-    {
-        absoluteTarget -= stepsPerTurn; // always move forward for minute hand
-    }
 
     Serial.printf("Current Pos: %d | Target Base: %d | Delta: %d | AbsTarget: %d\n",
                   currentPosition, targetPosition, delta, absoluteTarget);
@@ -413,6 +408,7 @@ void RunHandsTime1()
 
     // Always run S and M
     S1.runSpeed();
+    S1.runSpeed();
     M1.runSpeed();
 
     // Check if we should toggle H
@@ -442,6 +438,7 @@ void RunHandsTime2()
 
     // Always run S and M
     S2.runSpeed();
+    S2.runSpeed();
     M2.runSpeed();
 
     // Check if we should toggle H
@@ -467,6 +464,7 @@ void RunHandsTime2()
 
 void UpdateMotorsStepCount()
 {
+    //calibrateSecondHand(S2, SensorS2);
     auto normalize = [](long pos)
     {
         long half = STEPS_PER_TURN / 2;
@@ -504,4 +502,14 @@ void GetAndMoveToTime(bool clock1, bool clock2)
         MoveToRightTime1();
     if (clock2)
         MoveToRightTime2();
+}
+
+int NormalizeStep(int value)
+{
+    int halfTurn = STEPS_PER_TURN / 2;
+    while (value >= halfTurn)
+        value -= STEPS_PER_TURN;
+    while (value < -halfTurn)
+        value += STEPS_PER_TURN;
+    return value;
 }

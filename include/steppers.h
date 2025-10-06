@@ -97,5 +97,16 @@ void RunHandsTime1();
 void RunHandsTime2();
 void UpdateMotorsStepCount();
 void GetAndMoveToTime(bool clock1, bool clock2);
+int NormalizeStep(int value);
 
 #endif // STEPPERS_H
+
+extern const int stepsPerTurn;
+extern const double hourStepsPerHour;
+extern const double hourStepsPerMinute;
+extern const double hourStepsPerSecond;
+
+extern const double minuteStepsPerMinute;
+extern const double minuteStepsPerSecond;
+
+extern const double secondStepsPerSecond;
