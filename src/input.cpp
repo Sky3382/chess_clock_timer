@@ -1,9 +1,11 @@
 #include <input.h>
 #include <globals.h>
 #include <ESP32encoder.h>
-#include "modes.h"
+#include <Adafruit_MCP23X17.h>
+#include <modes.h>
 
-// Rotary Encoder Instance
+// input instances
+//  Rotary Encoder Instance
 ESP32Encoder encoder;
 
 // Button Instances
@@ -11,15 +13,17 @@ Bounce button_encoder;
 Bounce button_back;
 Bounce button_next;
 
-bool switchState;
+// input variables
+bool isSwitchOn;
 
 int reference_encoder_position = 0; // position when entering state 1
-int last_encoder_position = 0;      // track previous position
+int encoder_position = 0;
+int last_encoder_position = 0; // track previous position
 
 void InitEncoder()
 {
     // Initialize encoder
-    encoder.attachHalfQuad(ENCODER1_PIN_A, ENCODER1_PIN_B);
+    encoder.attachHalfQuad(ENCODER_PIN_A, ENCODER_PIN_B);
     encoder.setCount(0);                       // Set initial count to 0
     pinMode(BUTTON_ENCODER_PIN, INPUT_PULLUP); // Button with pull-up resistor
 }
@@ -30,7 +34,7 @@ void InitButtons()
     pinMode(BUTTON_NEXT_PIN, INPUT_PULLUP);    // Mode button with pull-up resistor
     pinMode(BUTTON_ENCODER_PIN, INPUT_PULLUP); // Encoder button with pull-up resistor
 
-    pinMode(switchPin, INPUT_PULLUP); // Extra switch with pull-up resistor
+    pinMode(SWITCH_PIN, INPUT_PULLUP); // Extra switch with pull-up resistor
 
     button_back.attach(BUTTON_BACK_PIN);
     button_back.interval(BUTTON_DEBOUNCE_INTERVAL); // Debounce interval
@@ -44,62 +48,66 @@ void InitButtons()
 
 void HandleInputs()
 {
+    // UPDATE BUTTONS
     button_back.update();
     button_next.update();
     button_encoder.update();
 
-    switchState = digitalRead(switchPin) == LOW; // LOW means switch closed
-
-    if (switchState)
-    {
-        selectedClock = 1;
-    }
-    else
-    {
-        selectedClock = 0;
-    }
-
+    // handle buttons
     if (button_back.fell())
     {
-        if (state == 1)
-        {
-            state = 0; // Change to mode change state
-            Serial.println("Entering mode change state");
-        }
-        else if (state == 2)
-        {
-            state = 1; // Change to settings state
-            Serial.println("Entering settings state");
-        }
         Serial.println("Back button pressed");
+        // handle depending on state
+        switch (state)
+        {
+        case 0:
+            break;
+
+        case 1:
+            state = 0; // if state is mode change, return to display state
+            Serial.println("Back to Display state");
+
+        case 2:
+            state = 1; // if in settings, return to mode change state
+            Serial.println("Back to Mode Change state");
+
+        default:
+            break;
+        }
     }
+
     if (button_next.fell())
     {
         Serial.println("Next button pressed");
-        if (state == 2 && mode == 1) {
+        // handle depending on state
+        switch (state)
+        {
+        case 2:
 
-            lastTimeToHour = timeToHour;
-            lastTimeToMinute = timeToMinute;
-            lastTimeToSecond = timeToSecond;
-
-            switch (selectedHand)
+            switch (mode) // in settings state, act different depending on the mode
             {
-                case 0:
-                    selectedHand = 1;
-                    Serial.println("Adjusting minute hand");
-                    break;
-                case 1:
-                    selectedHand = 2;
-                    Serial.println("Adjusting second hand");
-                    break;
-                case 2:
-                    selectedHand = 0;
-                    Serial1.println("Adjusting hour hand");
-                    break;
+            case 1:
+                StoreLastTimeToTimeValues();
+                CycleSelectedHand();
+                break;
+
+            case 2:
+                StoreLastPomodoroTimeValues();
+                CycleSelectedHand();
+
+                break;
+
+            default:
+                break;
             }
-        
+
+            break;
+
+        default:
+            break;
         }
     }
+
     if (button_encoder.fell())
     {
         switch (state)
@@ -110,13 +118,7 @@ void HandleInputs()
             break;
 
         case 1:
-            if (selectedMode != mode && selectedMode != 0)
-            {
-                state = 2; // Change to settings state
-                mode = selectedMode; // confirm selected mode
-                Serial.println("Entering settings state");
-            }
-            else if (selectedMode == 0)
+            if (selected_mode == 0)
             {
                 state = 0; // If in time mode and no change, go back to normal state
                 mode = 0;
@@ -124,33 +126,121 @@ void HandleInputs()
             }
             else
             {
-                state = 0; // Change to normal state
-                Serial.println("Entering normal state");
+                state = 2;            // Change to settings state
+                mode = selected_mode; // confirm selected mode
+                Serial.println("Entering settings state");
             }
-            break;
 
         case 2:
             state = 0; // Change to normal state
-            
+
             break;
         }
     }
 
+    // UPDATE SWITCH
+    isSwitchOn = digitalRead(isSwitchOn) == LOW; // LOW means switch closed
 
-    long position;
+    // handle switch
+    if (isSwitchOn)
+    {
+        selected_clock = 2;
+    }
+    else
+    {
+        selected_clock = 1;
+    }
+
+    // UPDATE ENCODER POSITION
     if (encoder.getCount() % 2 == 0)
-    {                                       // only read every second step to avoid noise
-        position = -encoder.getCount() / 2; // Get current position
-        if (position != last_encoder_position)
+    {                                               // only read every second step to avoid noise
+        encoder_position = -encoder.getCount() / 2; // Get current position
+        if (encoder_position != last_encoder_position)
         {
             Serial.print("Encoder position: ");
-            Serial.println(position);
-            last_encoder_position = position;
+            Serial.println(encoder_position);
+            last_encoder_position = encoder_position;
         }
     }
 }
 
-int GetPostionFromEncoder(ESP32Encoder encoderinquestion)
+void StoreLastTimeToTimeValues()
 {
-    return -encoderinquestion.getCount() / 2;
+    last_timeTo_hour = timeTo_hour;
+    last_timeTo_minute = timeTo_minute;
+    last_timeTo_second = timeTo_second;
+}
+
+void StoreLastPomodoroTimeValues()
+{
+    last_pomodoro_timer1_hour = pomodoro_timer1_hour;
+    last_pomodoro_timer1_minute = pomodoro_timer1_minute;
+    last_pomodoro_timer1_second = pomodoro_timer1_second;
+
+    last_pomodoro_timer2_hour = pomodoro_timer2_hour;
+    last_pomodoro_timer2_minute = pomodoro_timer2_minute;
+    last_pomodoro_timer2_second = pomodoro_timer2_second;
+}
+
+void CycleSelectedHand()
+{
+    if (selected_clock == 1)
+    {
+        switch (selected_Clock1_hand)
+        {
+        case 0:
+            selected_Clock1_hand = 1;
+            Serial.println("Adjusting Clock1 minute hand");
+            break;
+
+        case 1:
+            selected_Clock1_hand = 2;
+            Serial.println("Adjusting Clock1 second hand");
+            break;
+
+        case 2:
+            selected_Clock1_hand = 0;
+            Serial1.println("Adjusting Clock1 hour hand");
+            break;
+
+        default:
+            Serial.println("Invalid Clock1 hand selection — resetting to hour hand.");
+            selected_Clock1_hand = 0;
+            break;
+        }
+    }
+    else if (selected_clock == 2)
+    {
+        switch (selected_Clock2_hand)
+        {
+        case 0:
+            selected_Clock2_hand = 1;
+            Serial.println("Adjusting Clock2 minute hand");
+            break;
+
+        case 1:
+            selected_Clock2_hand = 2;
+            Serial.println("Adjusting Clock2 second hand");
+            break;
+
+        case 2:
+            selected_Clock2_hand = 0;
+            Serial1.println("Adjusting Clock2 hour hand");
+            break;
+
+        default:
+            Serial.println("Invalid Clock2 hand selection — resetting to hour hand.");
+            selected_Clock2_hand = 0;
+            break;
+        }
+    }
+    else
+    {
+        Serial.println("invalid Clock selected");
+    }
+}
+
+int GetPostionFromEncoder(ESP32Encoder encoder_in_question)
+{
+    return encoder_in_question.getCount() / 2;
 }
